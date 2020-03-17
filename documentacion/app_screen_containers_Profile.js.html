@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: app/screen/containers/Profile.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: app/screen/containers/Profile.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import React,{Component} from 'react';
+import {NavigationActions} from 'react-navigation';
+import { StyleSheet, Text, View, Button ,Image, TouchableOpacity, FlatList} from 'react-native';
+import { Ionicons , MaterialIcons } from '@expo/vector-icons';
+import {connect} from 'react-redux';
+import Header from '../../components/header';
+import * as SQLite from 'expo-sqlite';
+import API from '../../../utils/api';
+import ActivityEvents from '../../components/profileActivity';
+const db = SQLite.openDatabase("db5.db");
+const actividades = [1];
+
+var resultado=[{
+  id_actividad: 0,
+  nombre_actividad: "",
+  nota: 0,
+  count_videos: 0,
+  progresso: 0
+}];
+var storageActividad = [{
+  id_actividad: 0,
+  nombre_actividad: "",
+  nota: 0,
+  count_videos: 0,
+  progresso: 0
+}];
+var active = "";
+/**
+ * Contains all about Profile Screen.
+ * @class
+ */
+
+class Profile extends Component {
+  static navigationOptions = ({ navigation }) => {
+    return {
+      header: &lt;Header onPress={() => navigation.openDrawer()}>PERFIL&lt;/Header>,
+    }
+  }
+  state = {
+    storage: []
+  }
+  /**Load all about activities for student */
+  async loadActivities() {
+    active = "ESTOS SON SU PROGRESO EN LA ACTIVIDAD";
+    console.log("ID Estudiante");
+    console.log(this.props.student.id_estudiante);
+    db.transaction(tx => {
+      tx.executeSql(`select * from events where id_estudiante = ?;`, [this.props.student.id_estudiante], (_, { rows: { _array } }) =>
+        this.setState({ storage: _array }),
+        //console.log(this.state.storage)
+      );
+    });
+    storagesEvents = this.state.storage;
+    console.log("Cargando Datos Eventos")
+    console.log(storagesEvents);
+    for (var i = 0; i &lt; this.state.storage.length; i++) {
+      for (var j = 0; j &lt; actividades.length; j++) {
+        if (storagesEvents[i].id_actividad == actividades[j]) {
+          break;
+        }
+        else if (storagesEvents[i].id_actividad != actividades[j]) {
+          console.log("Cargando Actividades")
+          //console.log(storagesEvents[i].id_actividad);
+          actividades.push(storagesEvents[i].id_actividad);
+        }
+      }
+    }
+    console.log("Imprimiendo Actividades");
+    console.log(actividades);
+    var activity = await API.getActivities(this.props.ipconfig);
+    this.props.dispatch({
+      type: 'SET_ACTIVITY_STUDENT',
+      payload: {
+        studentActivity: activity
+      }
+    })
+    console.log("Capturando Eventos Por Actividad");
+    var notaF = 0;
+    var notaFEvaluation = 0;
+    var progressoActivity=0;
+    for (var i = this.state.storage.length - 1; i >= 0; i--) {
+      for (var j = 0; j &lt; activity.length; j++) {
+        if (this.state.storage[i].id_actividad == activity[j].id_actividad) {
+          //Comparation with scores for test
+          if (this.state.storage[i].check_a1 == activity[j].CA1 &amp;&amp; this.state.storage[i].check_a2 == activity[j].CA2 &amp;&amp; this.state.storage[i].check_a3 == activity[j].CA3) {
+            notaF = 5;
+          } else if (this.state.storage[i].check_a1 != activity[j].CA1 &amp;&amp; this.state.storage[i].check_a2 == activity[j].CA2 &amp;&amp; this.state.storage[i].check_a3 == activity[j].CA3) {
+            notaF = 4;
+          } else if (this.state.storage[i].check_a1 == activity[j].CA1 &amp;&amp; this.state.storage[i].check_a2 != activity[j].CA2 &amp;&amp; this.state.storage[i].check_a3 == activity[j].CA3) {
+            notaF = 4
+          } else if (this.state.storage[i].check_a1 == activity[j].CA1 &amp;&amp; this.state.storage[i].check_a2 == activity[j].CA2 &amp;&amp; this.state.storage[i].check_a3 != activity[j].CA3) {
+            notaF = 4;
+          } else if (this.state.storage[i].check_a1 != activity[j].CA1 &amp;&amp; this.state.storage[i].check_a2 != activity[j].CA2 &amp;&amp; this.state.storage[i].check_a3 == activity[j].CA3) {
+            notaF = 3;
+          } else if (this.state.storage[i].check_a1 != activity[j].CA1 &amp;&amp; this.state.storage[i].check_a2 == activity[j].CA2 &amp;&amp; this.state.storage[i].check_a3 != activity[j].CA3) {
+            notaF = 3;
+          } else if (this.state.storage[i].check_a1 == activity[j].CA1 &amp;&amp; this.state.storage[i].check_a2 != activity[j].CA2 &amp;&amp; this.state.storage[i].check_a3 != activity[j].CA3) {
+            notaF = 3;
+          } else if (this.state.storage[i].check_a1 != activity[j].CA1 &amp;&amp; this.state.storage[i].check_a2 != activity[j].CA2 &amp;&amp; this.state.storage[i].check_a3 != activity[j].CA3) {
+            notaF = 2;
+          } else {
+            notaF = 0;
+          }
+          //Comparation with scores for Evaluation
+          if (this.state.storage[i].check_Ea1 == activity[j].ECA1 &amp;&amp; this.state.storage[i].check_Ea2 == activity[j].ECA2 &amp;&amp; this.state.storage[i].check_Ea3 == activity[j].ECA3) {
+            notaFEvaluation = 5;
+          } else if (this.state.storage[i].check_Ea1 != activity[j].ECA1 &amp;&amp; this.state.storage[i].check_Ea2 == activity[j].ECA2 &amp;&amp; this.state.storage[i].check_Ea3 == activity[j].ECA3) {
+            notaFEvaluation = 4;
+          } else if (this.state.storage[i].check_Ea1 == activity[j].ECA1 &amp;&amp; this.state.storage[i].check_Ea2 != activity[j].ECA2 &amp;&amp; this.state.storage[i].check_Ea3 == activity[j].ECA3) {
+            notaFEvaluation = 4
+          } else if (this.state.storage[i].check_Ea1 == activity[j].ECA1 &amp;&amp; this.state.storage[i].check_Ea2 == activity[j].ECA2 &amp;&amp; this.state.storage[i].check_Ea3 != activity[j].ECA3) {
+            notaFEvaluation = 4;
+          } else if (this.state.storage[i].check_Ea1 != activity[j].ECA1 &amp;&amp; this.state.storage[i].check_Ea2 != activity[j].ECA2 &amp;&amp; this.state.storage[i].check_Ea3 == activity[j].ECA3) {
+            notaFEvaluation = 3;
+          } else if (this.state.storage[i].check_Ea1 != activity[j].ECA1 &amp;&amp; this.state.storage[i].check_Ea2 == activity[j].ECA2 &amp;&amp; this.state.storage[i].check_Ea3 != activity[j].ECA3) {
+            notaFEvaluation = 3;
+          } else if (this.state.storage[i].check_Ea1 == activity[j].ECA1 &amp;&amp; this.state.storage[i].check_Ea2 != activity[j].ECA2 &amp;&amp; this.state.storage[i].check_Ea3 != activity[j].ECA3) {
+            notaFEvaluation = 3;
+          } else if (this.state.storage[i].check_Ea1 != activity[j].ECA1 &amp;&amp; this.state.storage[i].check_Ea2 != activity[j].ECA2 &amp;&amp; this.state.storage[i].check_Ea3 != activity[j].ECA3) {
+            notaFEvaluation = 2;
+          } else {
+            notaFEvaluation = 0;
+          }
+          if(this.state.storage[i].check_inicio=='1'){
+            progressoActivity=0.2;
+          }
+          if (this.state.storage[i].check_video=='1'){
+            progressoActivity=0.4;
+          }
+          if(this.state.storage[i].check_answer=='1'){
+            progressoActivity=0.6;
+          }
+          if(this.state.storage[i].check_download=='1'){
+            progressoActivity=0.8;
+          }
+          if(this.state.storage[i].check_Ea1!='0'){
+            progressoActivity=1;
+          }
+          var totalActivity = (notaF + notaFEvaluation)/2;
+          dataActividadEvent = {
+            id_evento: this.state.storage[i].id_evento,
+            id_actividad: activity[j].id_actividad,
+            nombre_actividad: activity[j].titulo_actividad,
+            nota: notaF,
+            notaEvaluation: notaFEvaluation,
+            totalNota: totalActivity,
+            count_videos: this.state.storage[i].count_video,
+            progresso: progressoActivity
+          };
+          storageActividad.push(dataActividadEvent);
+          resultado = Array.from(new Set(storageActividad.map(s => s.id_actividad)))
+            .map(id_actividad => {
+              return {
+                id_actividad: id_actividad,
+                nombre_actividad: storageActividad.find(s => s.id_actividad === id_actividad).nombre_actividad,
+                nota: storageActividad.find(s => s.id_actividad === id_actividad).nota,
+                notaEvaluation: storageActividad.find(s => s.id_actividad === id_actividad).notaEvaluation,
+                totalNota: storageActividad.find(s=> s.id_actividad=== id_actividad).totalNota,
+                count_videos: storageActividad.find(s => s.id_actividad === id_actividad).count_videos,
+                progresso: storageActividad.find(s => s.id_actividad === id_actividad).progresso,
+                id_evento: storageActividad.find(s => s.id_actividad === id_actividad).id_evento,
+              };
+            });
+        }
+      }
+    }
+    var elementoEliminado = resultado.splice(0, 1);
+    console.log(elementoEliminado)
+  }
+  /**Load all information about a specific student */
+  componentDidMount() {
+    db.transaction(tx => {
+      tx.executeSql(`select * from events where id_estudiante = ?;`, [this.props.student.id_estudiante], (_, { rows: { _array } }) =>
+        this.setState({ storage: _array }),
+        console.log(this.state.storage)
+      );
+    });
+    this.loadActivities();
+  }
+  keyExtractor = item => item.id_actividad.toString();
+  renderItem = ({ item }) => {
+    return (
+      &lt;ActivityEvents {...item} />
+    )
+  }
+  /** Render objects in a Screen of movil. */
+  render() {
+    console.log(this.props.student.id_estudiante);
+    return (
+      &lt;View style={styles.container}>
+        &lt;View style={styles.containerText}>
+          &lt;Text style={styles.nombre}>{this.props.student.nombre_estudiante} {this.props.student.apellido_estudiante}&lt;/Text>
+          &lt;Text style={styles.correo}> Correo: {this.props.student.correo_electronico}&lt;/Text>
+          &lt;Text style={styles.grado}>  Grado: {this.props.student.grado_estudiante}&lt;/Text>
+          &lt;Text style={styles.TextoDatos}>{active}&lt;/Text>
+        &lt;/View>
+        &lt;FlatList
+          data={resultado}
+          keyExtractor={this.keyExtractor}
+          renderItem={this.renderItem}
+        />
+      &lt;/View>
+    );
+  }
+}
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  TextoDatos:{
+    marginBottom:15,
+    fontSize: 14,
+    color: '#4F4F4F',
+    fontWeight:'bold',
+  },
+  nombre:{
+    marginTop: 10,
+    fontSize: 22,
+    color: '#44546b',
+    fontWeight:'bold',
+  },
+  containerText:{
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  correo:{
+    fontSize: 14,
+    color: '#6b6b6b',
+    fontWeight:'bold'
+  },
+  colegio:{
+    fontSize: 16,
+    color: '#6b6b6b',
+    fontWeight:'bold'
+  },
+  grado:{
+    fontSize: 16,
+    color: '#6b6b6b',
+    fontWeight:'bold',
+    marginBottom: 10
+  }
+});
+function mapStateToProps(state) {
+  return {
+    student: state.videos.selectedStudent,
+    ipconfig: state.videos.selectedIPConfig
+  }
+}
+
+export default connect(mapStateToProps)(Profile);</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Activities.html">Activities</a></li><li><a href="module-AdminUSer.html">AdminUSer</a></li><li><a href="module-AppNavigatorWithState.html">AppNavigatorWithState</a></li><li><a href="module-Configure.html">Configure</a></li><li><a href="module-createAppContainer.html">createAppContainer</a></li><li><a href="module-DoubtsActivity.html">DoubtsActivity</a></li><li><a href="module-DrawerNavigator.html">DrawerNavigator</a></li><li><a href="module-Main.html">Main</a></li><li><a href="module-navigationReducer.html">navigationReducer</a></li><li><a href="module-Notification.html">Notification</a></li><li><a href="module-Profiles.html">Profiles</a></li><li><a href="module-reducer.html">reducer</a></li><li><a href="module-SwitchNavigator.html">SwitchNavigator</a></li><li><a href="module-videos.html">videos</a></li></ul><h3>Classes</h3><ul><li><a href="Activities.html">Activities</a></li><li><a href="Api.html">Api</a></li><li><a href="AppNavigatorWithState.html">AppNavigatorWithState</a></li><li><a href="CloseSession.html">CloseSession</a></li><li><a href="Configure.html">Configure</a></li><li><a href="contenido.html">contenido</a></li><li><a href="detailActivity.html">detailActivity</a></li><li><a href="evaluationActivity.html">evaluationActivity</a></li><li><a href="Home.html">Home</a></li><li><a href="Login.html">Login</a></li><li><a href="playContent.html">playContent</a></li><li><a href="Player.html">Player</a></li><li><a href="playExcercise.html">playExcercise</a></li><li><a href="Profile.html">Profile</a></li><li><a href="Register.html">Register</a></li><li><a href="selectMoment.html">selectMoment</a></li><li><a href="SuggestionList.html">SuggestionList</a></li><li><a href="testActivity.html">testActivity</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Activity">Activity</a></li><li><a href="global.html#Close">Close</a></li><li><a href="global.html#ContenidoLayout">ContenidoLayout</a></li><li><a href="global.html#DetailActivityLayout">DetailActivityLayout</a></li><li><a href="global.html#Details">Details</a></li><li><a href="global.html#Empty">Empty</a></li><li><a href="global.html#Header">Header</a></li><li><a href="global.html#Layout">Layout</a></li><li><a href="global.html#mapStateToProps">mapStateToProps</a></li><li><a href="global.html#Reading">Reading</a></li><li><a href="global.html#Search">Search</a></li><li><a href="global.html#Subject">Subject</a></li><li><a href="global.html#Suggestion">Suggestion</a></li><li><a href="global.html#SuggestionListLayout">SuggestionListLayout</a></li><li><a href="global.html#VerticalSeparator">VerticalSeparator</a></li><li><a href="global.html#videos">videos</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Sun Feb 02 2020 17:32:16 GMT-0500 (Colombia Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

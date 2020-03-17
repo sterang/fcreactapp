@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: app/screen/containers/selectMoment.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: app/screen/containers/selectMoment.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import React,{Component} from 'react';
+import { StyleSheet,Button, View, TouchableOpacity, Text, Modal, TextInput, Alert} from 'react-native';
+import {connect} from 'react-redux';
+import API from '../../../utils/api';
+import HeaderReturn from '../../components/headerReturn';
+import { LinearGradient } from 'expo-linear-gradient';
+import {NavigationActions} from 'react-navigation';
+import * as SQLite from 'expo-sqlite';
+
+const db = SQLite.openDatabase("db5.db");
+
+/**
+ * Contains all about select moment in a activity.
+ * @class
+ */
+
+class selectMoment extends Component{
+    static navigationOptions=({navigation})=>{
+        return{
+            header: (&lt;HeaderReturn onPress={()=>navigation.goBack()}>Selecciona El Lugar&lt;/HeaderReturn>)
+        }
+    }
+    state={
+        modalVisible: false,
+        pregunta: null,
+        storage: null
+    }
+    /** Visible of modal */
+    setModalVisible(visible) {
+        this.setState({ modalVisible: visible });
+    }
+    /** Load the first moment in the activity */
+    detailActivity(){
+        this.props.dispatch({
+            type:'SET_SELECT_ACTIVITIES_SUBJECT_LIST',
+            payload:{
+                activity: this.props.activity,
+             }
+        })
+        this.props.dispatch(NavigationActions.navigate({
+            routeName: 'DetailActivitySubj'
+        }))
+    }
+    /** Load the second moment in the activity and check if it is already */
+    excersiceActivity(){
+        if(this.props.activity.taller == 1){
+            this.props.dispatch({
+                type:'SET_SELECT_ACTIVITIES_SUBJECT_LIST',
+                payload:{
+                    activity: this.props.activity,
+                 }
+            })
+            this.props.dispatch(NavigationActions.navigate({
+                routeName: 'PlayExcersise'
+            }))
+        }else {
+            Alert.alert(
+                'Talller',
+                'El taller no esta disponible en este momento',
+                [
+                  {
+                    text: 'Cancel',
+                    onPress: () => console.log('Cancel Pressed'),
+                    style: 'cancel',
+                  },
+                  { text: 'OK', onPress: () => console.log('OK Pressed') },
+                ],
+                { cancelable: false }
+              );
+        }
+        
+    }
+    /** Show modal for a doubt */
+    doubtActivity(){
+        this.setModalVisible(true);
+    }
+    /** Load the third moment in the activity and check if it is already */
+    evaluationActivity(){
+        if(this.props.activity.evaluacion == 1){
+            this.props.dispatch({
+                type:'SET_SELECT_ACTIVITIES_SUBJECT_LIST',
+                payload:{
+                    activity: this.props.activity,
+                 }
+            })
+            this.props.dispatch(NavigationActions.navigate({
+                routeName: 'EvaluationActivity'
+            }))
+        }else{
+            Alert.alert(
+                'Evaluacion',
+                'La evaluación no esta disponible en este momento',
+                [
+                  {
+                    text: 'Cancel',
+                    onPress: () => console.log('Cancel Pressed'),
+                    style: 'cancel',
+                  },
+                  { text: 'OK', onPress: () => console.log('OK Pressed') },
+                ],
+                { cancelable: false }
+              );
+        }
+    }
+    /** Load all of components for doubts */
+    componentDidMount(){
+        db.transaction(tx => {
+            tx.executeSql(
+              "create table if not exists doubts (id_duda integer not null, id_actividad integer, id_estudiante integer, pregunta text, respuesta text, estado_duda int);"
+            );
+            tx.executeSql("select * from doubts", [], (_, { rows:{ _array } }) =>
+                this.setState({ storage: _array }),
+                console.log(this.state.storage)
+            );
+        });
+    }
+    /** Create a document o a sentence for a doubt */
+    registrateDoubt(){
+        db.transaction(tx => {
+            tx.executeSql("select * from doubts", [], (_, { rows:{ _array } }) =>
+                this.setState({ storage: _array }),
+                console.log(this.state.storage)
+            );
+        });
+        var storageDoubts = this.state.storage;
+        if(storageDoubts.length==0){
+            id_doubt_cont = 1
+        }else{
+            id_doubt_cont = storageDoubts.length+1
+        }
+        id_duda=""+this.props.student.id_estudiante+id_doubt_cont;
+        id_duda = parseInt(id_duda);
+        dataDoubt={
+            id_duda:id_duda,
+            id_actividad: this.props.activity.id_actividad,
+            id_estudiante: this.props.student.id_estudiante,
+            pregunta: this.state.pregunta,
+            respuesta: "",
+            estado_duda: 1
+        }
+        db.transaction(tx => {
+            tx.executeSql("insert into doubts (id_duda, id_actividad, id_estudiante, pregunta, respuesta, estado_duda) values (?, ?, ?, ?, ?, ?)",
+             [id_duda,this.props.activity.id_actividad, this.props.student.id_estudiante, this.state.pregunta,"", 1]);
+            tx.executeSql("select * from doubts", [], (_, { rows:{ _array } }) =>
+                this.setState({ storage: _array }),
+                console.log(this.state.storage)
+            );
+        });
+    }
+    /** Send information about doubts */
+    async sincronizaDoubt(){
+        db.transaction(tx => {
+            tx.executeSql("select * from doubts", [], (_, { rows:{ _array } }) =>
+                this.setState({ storage: _array })
+                //console.log(this.state.storage)
+            );
+        });
+        var storageDoubts = this.state.storage;
+        console.log("Imprimiendo StorageDoubts");
+        console.log(storageDoubts[0].id_duda);
+        for (var i=0;i&lt;storageDoubts.length;i++){
+            if (storageDoubts[i].estado_duda==1){
+                var dataDoubt= storageDoubts[i];
+                var creacionDuda = await API.generateDoubt(this.props.ipconfig,dataDoubt);      
+                var id_dudosa = storageDoubts[i].id_duda;
+                db.transaction(tx => {
+                    tx.executeSql("update doubts set estado_duda = ? where id_duda = ? ", [0, id_dudosa]);
+                    tx.executeSql("select * from doubts", [], (_, { rows:{ _array } }) =>
+                        this.setState({ storage: _array }),
+                        console.log(this.state.storage)
+                    );
+                });     
+                //tx.executeSql("update students set nombre_estudiante = ? , apellido_estudiante = ?, grado_estudiante = ?,curso_estudiante = ?, id_colegio = ?, nombre_usuario = ?, contrasena = ?, correo_electronico = ? where id_estudiante = ? ", [this.state.name,this.state.last_name,this.state.grado, 1, this.state.schoolSelected, this.state.user, this.state.password, this.state.email, this.props.student.id_estudiante]);
+            }
+        }
+        
+        //var creacionDuda = await API.generateDoubt(this.props.ipconfig,dataDoubt);
+        //console.log(this.state.storage);
+    }
+    /** Render objects in a Screen of movil. */
+    render() {
+        return (
+          &lt;View style={styles.container}>
+              &lt;View style={styles.box0}>
+            &lt;Text style={styles.textSelected}>Selecciona un Lugar para continuar: &lt;/Text>
+            &lt;TouchableOpacity style={styles.touchableButtonSignIn} onPress={() => this.detailActivity()}>
+                    &lt;LinearGradient
+                        colors={['#272d34', '#0f2545', '#272d34']}
+                        style={{ padding: 10, alignItems: 'center', borderRadius: 18, height: 40 }}>
+                        &lt;Text
+                            style={{
+                                backgroundColor: 'transparent',
+                                fontSize: 15,
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                borderRadius: 16
+                            }}>
+                            PRACTICA EN CASA
+                        &lt;/Text>
+                    &lt;/LinearGradient>
+                &lt;/TouchableOpacity>
+                &lt;TouchableOpacity style={styles.touchableButtonSignIn} onPress={() => this.excersiceActivity()}>
+                    &lt;LinearGradient
+                        colors={['#272d34', '#0f2545', '#272d34']}
+                        style={{ padding: 10, alignItems: 'center', borderRadius: 18, height: 40 }}>
+                        &lt;Text
+                            style={{
+                                backgroundColor: 'transparent',
+                                fontSize: 15,
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                borderRadius: 16
+                            }}>
+                            PRACTICA EN CLASE
+                        &lt;/Text>
+                    &lt;/LinearGradient>
+                &lt;/TouchableOpacity>
+                &lt;TouchableOpacity style={styles.touchableButtonSignIn} onPress={() => this.evaluationActivity()}>
+                    &lt;LinearGradient
+                        colors={['#272d34', '#0f2545', '#272d34']}
+                        style={{ padding: 10, alignItems: 'center', borderRadius: 18, height: 40 }}>
+                        &lt;Text
+                            style={{
+                                backgroundColor: 'transparent',
+                                fontSize: 15,
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                borderRadius: 16
+                            }}>
+                            REALIZA TU EXAMEN
+                        &lt;/Text>
+                    &lt;/LinearGradient>
+                &lt;/TouchableOpacity>
+                &lt;/View>
+                &lt;View style={styles.box}>
+                &lt;TouchableOpacity style={styles.touchableButtonSignIn} onPress={() => this.doubtActivity()}>
+                    &lt;LinearGradient
+                        colors={['#272d34', '#0f2545', '#272d34']}
+                        style={{ padding: 7, alignItems: 'center', borderRadius: 30, height: 50 }}>
+                        &lt;Text
+                            style={{
+                                backgroundColor: 'transparent',
+                                fontSize: 30,
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                borderRadius: 30
+                            }}>
+                            ?
+                        &lt;/Text>
+                    &lt;/LinearGradient>
+                &lt;/TouchableOpacity>                    
+                &lt;/View>
+                &lt;Modal
+                 animationType="slide"
+                 transparent={false}
+                 visible={this.state.modalVisible}
+                 onRequestClose={() => {
+                 Alert.alert('Modal has been closed.');
+                  }}>
+          &lt;View style={{ marginTop: 22, marginLeft: 30, }}>
+            &lt;View>
+              &lt;Text>Realiza tu pregunta:&lt;/Text>
+                &lt;TextInput style={styles.email} placeholder='Pregunta???'
+                  autoCapitalize='none'
+                  onChangeText={(text) => this.setState({ pregunta: text })}
+                >
+                &lt;/TextInput>
+                &lt;TouchableOpacity style={{marginTop: 20, marginRight: 25, marginBottom: 20,}}
+                  onPress={ ()=>this.registrateDoubt()
+                }>
+                  &lt;LinearGradient
+                        colors={['#272d34', '#0f2545', '#272d34']}
+                        style={{ padding: 10, alignItems: 'center', borderRadius: 18, height: 40 }}>
+                        &lt;Text
+                            style={{
+                                backgroundColor: 'transparent',
+                                fontSize: 15,
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                borderRadius: 16
+                            }}>
+                            GUARDA TU PREGUNTA
+                        &lt;/Text>
+                    &lt;/LinearGradient>
+                &lt;/TouchableOpacity>
+
+                &lt;TouchableOpacity style={{marginTop: 20, marginRight: 25, marginBottom: 20,}}
+                  onPress={ ()=>this.sincronizaDoubt()
+                }>
+                  &lt;LinearGradient
+                        colors={['#272d34', '#0f2545', '#272d34']}
+                        style={{ padding: 10, alignItems: 'center', borderRadius: 18, height: 40 }}>
+                        &lt;Text
+                            style={{
+                                backgroundColor: 'transparent',
+                                fontSize: 15,
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                borderRadius: 16
+                            }}>
+                            SINCRONIZA TU PREGUNTA
+                        &lt;/Text>
+                    &lt;/LinearGradient>
+                &lt;/TouchableOpacity>
+
+                &lt;TouchableOpacity style={{marginTop: 20, marginRight: 25, marginBottom: 20}}
+                  onPress={() => {
+                  this.setModalVisible(!this.state.modalVisible);
+                }}>  
+                  &lt;LinearGradient
+                        colors={['#272d34', '#0f2545', '#272d34']}
+                        style={{ padding: 10, alignItems: 'center', borderRadius: 18, height: 40 }}>
+                        &lt;Text
+                            style={{
+                                backgroundColor: 'transparent',
+                                fontSize: 15,
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                borderRadius: 16
+                            }}>
+                            CANCELAR
+                        &lt;/Text>
+                    &lt;/LinearGradient>
+              &lt;/TouchableOpacity>
+            &lt;/View>
+          &lt;/View>
+        &lt;/Modal>
+          &lt;/View>
+        );
+      }
+}
+const styles = StyleSheet.create({
+    email:{
+        marginTop: 25,
+        borderRadius:15,
+        color: '#000000',
+        borderColor: '#6E6060',
+        borderWidth: 1, 
+        textAlign: "center",
+        height: 100,
+        width: 300,
+        backgroundColor: '#FFFFFF'
+      },
+    box0:{
+        flex: 11
+    },
+    box:{
+        flex: .5,
+        marginBottom:15,
+        justifyContent: 'flex-end',
+        alignItems: 'flex-end',
+        marginLeft: 200
+    },
+    container: {
+      flex: 1,
+      backgroundColor: '#fff',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#FFFFFF'
+
+    },
+    textSelected:{
+        marginTop: 50,
+        marginBottom:25,
+        fontSize: 18,
+        fontWeight: 'bold'
+    },
+    buttonSignIn:{
+      borderRadius:17,
+      height: 40,
+      width: 300,
+      backgroundColor: '#5DC5E6',
+      textAlign:'center',
+      marginTop:7
+    },
+    touchableButtonSignIn:{
+      justifyContent: 'center',
+      marginBottom: 50
+    },
+    registrate:{
+      marginTop: 10,
+      color: '#E7E7E7'
+    }
+  });
+
+function mapStateToProps(state){
+    return{
+        student:state.videos.selectedStudent,
+        activity:state.videos.selectedActivity,
+        ipconfig: state.videos.selectedIPConfig
+    }
+}
+export default connect(mapStateToProps)(selectMoment);</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Activities.html">Activities</a></li><li><a href="module-AdminUSer.html">AdminUSer</a></li><li><a href="module-AppNavigatorWithState.html">AppNavigatorWithState</a></li><li><a href="module-Configure.html">Configure</a></li><li><a href="module-createAppContainer.html">createAppContainer</a></li><li><a href="module-DoubtsActivity.html">DoubtsActivity</a></li><li><a href="module-DrawerNavigator.html">DrawerNavigator</a></li><li><a href="module-Main.html">Main</a></li><li><a href="module-navigationReducer.html">navigationReducer</a></li><li><a href="module-Notification.html">Notification</a></li><li><a href="module-Profiles.html">Profiles</a></li><li><a href="module-reducer.html">reducer</a></li><li><a href="module-SwitchNavigator.html">SwitchNavigator</a></li><li><a href="module-videos.html">videos</a></li></ul><h3>Classes</h3><ul><li><a href="Activities.html">Activities</a></li><li><a href="Api.html">Api</a></li><li><a href="AppNavigatorWithState.html">AppNavigatorWithState</a></li><li><a href="CloseSession.html">CloseSession</a></li><li><a href="Configure.html">Configure</a></li><li><a href="contenido.html">contenido</a></li><li><a href="detailActivity.html">detailActivity</a></li><li><a href="evaluationActivity.html">evaluationActivity</a></li><li><a href="Home.html">Home</a></li><li><a href="Login.html">Login</a></li><li><a href="playContent.html">playContent</a></li><li><a href="Player.html">Player</a></li><li><a href="playExcercise.html">playExcercise</a></li><li><a href="Profile.html">Profile</a></li><li><a href="Register.html">Register</a></li><li><a href="selectMoment.html">selectMoment</a></li><li><a href="SuggestionList.html">SuggestionList</a></li><li><a href="testActivity.html">testActivity</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Activity">Activity</a></li><li><a href="global.html#Close">Close</a></li><li><a href="global.html#ContenidoLayout">ContenidoLayout</a></li><li><a href="global.html#DetailActivityLayout">DetailActivityLayout</a></li><li><a href="global.html#Details">Details</a></li><li><a href="global.html#Empty">Empty</a></li><li><a href="global.html#Header">Header</a></li><li><a href="global.html#Layout">Layout</a></li><li><a href="global.html#mapStateToProps">mapStateToProps</a></li><li><a href="global.html#Reading">Reading</a></li><li><a href="global.html#Search">Search</a></li><li><a href="global.html#Subject">Subject</a></li><li><a href="global.html#Suggestion">Suggestion</a></li><li><a href="global.html#SuggestionListLayout">SuggestionListLayout</a></li><li><a href="global.html#VerticalSeparator">VerticalSeparator</a></li><li><a href="global.html#videos">videos</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Sun Feb 02 2020 17:32:16 GMT-0500 (Colombia Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

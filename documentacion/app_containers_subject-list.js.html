@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: app/containers/subject-list.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: app/containers/subject-list.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import React,{Component} from 'react';
+import{FlatList,Text, Alert, TouchableOpacity} from 'react-native';
+import Layout from '../components/suggestion-list-layout';
+import Empty from '../components/empty';
+import Separator from '../components/separator';
+import Suggestion from '../components/subject';
+import {connect} from 'react-redux';
+import {NavigationActions} from 'react-navigation';
+import * as SQLite from 'expo-sqlite';
+import API from '../../utils/api';
+const db = SQLite.openDatabase("db5.db");
+/** @function mapStateToProps */
+// Return the value state in a subject, ip and list state.
+function mapStateToProps(state){
+    return {
+        list: state.videos.subject,
+        ipconfig: state.videos.selectedIPConfig,
+        student:state.videos.selectedStudent
+    }
+}
+/**
+ * Contains all about information the content REA list screen
+ * @class
+ */
+class SuggestionList extends Component {
+    state={
+        storage: null,
+        storageFlats: null,
+        storageFilter:null
+    }
+    componentDidMount(){
+        db.transaction(tx => {
+            tx.executeSql(
+              "create table if not exists events (id_evento integer primary key not null, data_start text, hour_start text, data_end text, hour_end text, id_actividad int, id_estudiante int, check_download int, check_inicio int, check_fin int, check_answer int, count_video int, check_video int, check_document int, check_a1 int, check_a2 int, check_a3 int, check_profile int, check_Ea1 int, check_Ea2 int, check_Ea3 int );"
+            );
+            tx.executeSql(
+                "create table if not exists flatEvent (id_evento integer not null, upload int);"
+              );
+            tx.executeSql("select * from events", [], (_, { rows:{ _array } }) =>
+                this.setState({ storage: _array })
+            );
+            tx.executeSql(
+                `select * from flatEvent ;`,
+                [],
+                (_, { rows: { _array } }) => this.setState({ storageFlats: _array })
+              );
+        });
+    }
+    updateFlat(){
+        db.transaction(tx => {
+            tx.executeSql(
+              `select * from events ;`,
+                [],
+              (_, { rows: { _array } }) => this.setState({ storage: _array })
+            );
+            tx.executeSql(
+                `select * from flatEvent ;`,
+                [],
+                (_, { rows: { _array } }) => this.setState({ storageFlats: _array })
+            );
+        });
+
+    }
+    async sendServer (){
+        //this.consulta();
+        db.transaction(tx => {
+            tx.executeSql(
+              `select * from events ;`,
+                [],
+              (_, { rows: { _array } }) => this.setState({ storage: _array })
+            );
+            tx.executeSql(
+                `select * from flatEvent ;`,
+                [],
+                (_, { rows: { _array } }) => this.setState({ storageFlats: _array })
+            );
+        });
+        
+        this.updateFlat();
+        var data = this.state.storage;
+        var Flats = this.state.storageFlats;
+        
+        console.log("Trayendo Flats");
+        console.log(Flats);
+        for(var i = 0; i&lt;Flats.length; i++){
+            if(Flats[i].upload==0){
+                for(var j=0; j&lt;data.length; j++){
+                    if(Flats[i].id_evento == data[j].id_evento){
+                        var queryApi = await API.loadEventsLast(this.props.ipconfig);
+                        queryApi = queryApi+1;
+                        var id_estudianteF = ""+this.props.student.id_colegio + this.props.student.id_estudiante + queryApi;
+                        var id_estudianteF = parseInt(id_estudianteF);
+                        data[j].id_evento= id_estudianteF;
+                        var id_eventoFs = Flats[j].id_evento;
+                        console.log("ID EVENTOS");
+                        console.log(id_eventoFs);
+                        db.transaction(tx => {
+                            tx.executeSql(
+                              `update flatEvent set upload = ? where id_evento = ? ;`,[1,id_eventoFs]);
+                            tx.executeSql("select * from flatEvent", [], (_, { rows: { _array } }) =>
+                                console.log(_array)
+                            );
+                        });
+                        var dataEvents = data[j];
+                        var query2 = await API.createEvents(this.props.ipconfig,dataEvents);
+                        //tx.executeSql("update students set nombre_estudiante = ? , apellido_estudiante = ?, grado_estudiante = ?,curso_estudiante = ?, id_colegio = ?, nombre_usuario = ?, contrasena = ?, correo_electronico = ? where id_estudiante = ? ", [this.state.name,this.state.last_name,this.state.grado, 1, this.state.schoolSelected, this.state.user, this.state.password, this.state.email, this.props.student.id_estudiante]);
+                    }
+                }
+            }
+        }
+        //console.log(data);
+        //console.log(query2);
+    }
+    
+    renderEmpty=()=>&lt;Empty text="No hay materias asociadas al colegio">&lt;/Empty>
+    itemSeparatos=()=>&lt;Separator text="No hay materias asociadas al colegio">&lt;/Separator>
+    viewContenido=(item)=>{
+        this.props.dispatch({
+            type:'SET_SELECT_ACTIVITIES_LIST',
+            payload:{
+                subject: item,
+            }
+        })
+        //console.log(this.props.dispatch)
+        this.props.dispatch(NavigationActions.navigate({
+            routeName: 'ActivitySubj'
+        }))
+    }
+    
+    renderItem=({item})=>{
+        return(
+            &lt;Suggestion {...item}
+            onPress={()=>{this.viewContenido(item)}}
+            />
+        )
+    }
+    keyExtractor = item=>item.id_materiaActiva.toString()
+    render(){
+        var data = [];
+        console.log("Esto es para el filtro");
+        data = this.props.list;
+        return(
+            &lt;Layout title="Tus Materias" onPress={()=>this.sendServer()}>    
+            
+            &lt;FlatList
+                keyExtractor={this.keyExtractor}
+                data={data}
+                ListEmptyComponent= {this.renderEmpty}
+                ItemSeparatorComponent={this.itemSeparatos}
+                renderItem={this.renderItem}
+            />
+            &lt;/Layout>
+        );
+    }
+}
+export default connect(mapStateToProps) (SuggestionList);</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Activities.html">Activities</a></li><li><a href="module-AdminUSer.html">AdminUSer</a></li><li><a href="module-AppNavigatorWithState.html">AppNavigatorWithState</a></li><li><a href="module-Configure.html">Configure</a></li><li><a href="module-createAppContainer.html">createAppContainer</a></li><li><a href="module-DoubtsActivity.html">DoubtsActivity</a></li><li><a href="module-DrawerNavigator.html">DrawerNavigator</a></li><li><a href="module-Main.html">Main</a></li><li><a href="module-navigationReducer.html">navigationReducer</a></li><li><a href="module-Notification.html">Notification</a></li><li><a href="module-Profiles.html">Profiles</a></li><li><a href="module-reducer.html">reducer</a></li><li><a href="module-SwitchNavigator.html">SwitchNavigator</a></li><li><a href="module-videos.html">videos</a></li></ul><h3>Classes</h3><ul><li><a href="Activities.html">Activities</a></li><li><a href="Api.html">Api</a></li><li><a href="AppNavigatorWithState.html">AppNavigatorWithState</a></li><li><a href="CloseSession.html">CloseSession</a></li><li><a href="Configure.html">Configure</a></li><li><a href="contenido.html">contenido</a></li><li><a href="detailActivity.html">detailActivity</a></li><li><a href="evaluationActivity.html">evaluationActivity</a></li><li><a href="Home.html">Home</a></li><li><a href="Login.html">Login</a></li><li><a href="playContent.html">playContent</a></li><li><a href="Player.html">Player</a></li><li><a href="playExcercise.html">playExcercise</a></li><li><a href="Profile.html">Profile</a></li><li><a href="Register.html">Register</a></li><li><a href="selectMoment.html">selectMoment</a></li><li><a href="SuggestionList.html">SuggestionList</a></li><li><a href="testActivity.html">testActivity</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Activity">Activity</a></li><li><a href="global.html#Close">Close</a></li><li><a href="global.html#ContenidoLayout">ContenidoLayout</a></li><li><a href="global.html#DetailActivityLayout">DetailActivityLayout</a></li><li><a href="global.html#Details">Details</a></li><li><a href="global.html#Empty">Empty</a></li><li><a href="global.html#Header">Header</a></li><li><a href="global.html#Layout">Layout</a></li><li><a href="global.html#mapStateToProps">mapStateToProps</a></li><li><a href="global.html#Reading">Reading</a></li><li><a href="global.html#Search">Search</a></li><li><a href="global.html#Subject">Subject</a></li><li><a href="global.html#Suggestion">Suggestion</a></li><li><a href="global.html#SuggestionListLayout">SuggestionListLayout</a></li><li><a href="global.html#VerticalSeparator">VerticalSeparator</a></li><li><a href="global.html#videos">videos</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Sun Feb 02 2020 17:32:16 GMT-0500 (Colombia Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

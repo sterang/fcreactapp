@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: app/components/headerReturn.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: app/components/headerReturn.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import React from 'react';
+import {View, Text, Image, StyleSheet, SafeAreaView, TouchableOpacity} from 'react-native'
+import { Ionicons , Octicons } from '@expo/vector-icons';
+/** @function Header */
+// Create the specific elements for the return a another screen. 
+
+function HeaderReturn (props){
+    return(
+        &lt;View>
+            &lt;SafeAreaView style={style.statusBar}>&lt;/SafeAreaView>
+            &lt;View style={style.bar}>
+                &lt;View style={style.container}>
+                    &lt;TouchableOpacity onPress={props.onPress}>
+                        &lt;Ionicons name="md-arrow-back" size={32} color="white" style={style.menu}/>
+                    &lt;/TouchableOpacity>
+                    &lt;View style={style.center}>
+                        &lt;Text style={style.texto}>{props.children}&lt;/Text> 
+                    &lt;/View>
+                &lt;/View>
+            &lt;/View>
+        &lt;/View>
+    );
+}
+const style = StyleSheet.create({
+    menu:{
+        width:30,
+        height:30,
+        marginTop: 10,
+    },
+    bar:{
+        
+    },
+    statusBar:{
+        marginTop:0,
+        height: 0,
+    },
+    container:{
+        backgroundColor: '#272D34',
+        padding: 10,
+        flexDirection: 'row'
+    },
+    center:{
+        flex: 1,
+        padding: 5,
+        flexDirection:'row',
+        justifyContent: 'flex-start'
+    },
+    texto:{
+        color:'white',
+        fontSize: 17,
+        fontWeight:"bold",
+        marginLeft: 20,
+        marginTop: 10,
+      }
+})
+export default HeaderReturn;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Activities.html">Activities</a></li><li><a href="module-AdminUSer.html">AdminUSer</a></li><li><a href="module-AppNavigatorWithState.html">AppNavigatorWithState</a></li><li><a href="module-Configure.html">Configure</a></li><li><a href="module-createAppContainer.html">createAppContainer</a></li><li><a href="module-DoubtsActivity.html">DoubtsActivity</a></li><li><a href="module-DrawerNavigator.html">DrawerNavigator</a></li><li><a href="module-Main.html">Main</a></li><li><a href="module-navigationReducer.html">navigationReducer</a></li><li><a href="module-Notification.html">Notification</a></li><li><a href="module-Profiles.html">Profiles</a></li><li><a href="module-reducer.html">reducer</a></li><li><a href="module-SwitchNavigator.html">SwitchNavigator</a></li><li><a href="module-videos.html">videos</a></li></ul><h3>Classes</h3><ul><li><a href="Activities.html">Activities</a></li><li><a href="Api.html">Api</a></li><li><a href="AppNavigatorWithState.html">AppNavigatorWithState</a></li><li><a href="CloseSession.html">CloseSession</a></li><li><a href="Configure.html">Configure</a></li><li><a href="contenido.html">contenido</a></li><li><a href="detailActivity.html">detailActivity</a></li><li><a href="evaluationActivity.html">evaluationActivity</a></li><li><a href="Home.html">Home</a></li><li><a href="Login.html">Login</a></li><li><a href="playContent.html">playContent</a></li><li><a href="Player.html">Player</a></li><li><a href="playExcercise.html">playExcercise</a></li><li><a href="Profile.html">Profile</a></li><li><a href="Register.html">Register</a></li><li><a href="selectMoment.html">selectMoment</a></li><li><a href="SuggestionList.html">SuggestionList</a></li><li><a href="testActivity.html">testActivity</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Activity">Activity</a></li><li><a href="global.html#Close">Close</a></li><li><a href="global.html#ContenidoLayout">ContenidoLayout</a></li><li><a href="global.html#DetailActivityLayout">DetailActivityLayout</a></li><li><a href="global.html#Details">Details</a></li><li><a href="global.html#Empty">Empty</a></li><li><a href="global.html#Header">Header</a></li><li><a href="global.html#Layout">Layout</a></li><li><a href="global.html#mapStateToProps">mapStateToProps</a></li><li><a href="global.html#Reading">Reading</a></li><li><a href="global.html#Search">Search</a></li><li><a href="global.html#Subject">Subject</a></li><li><a href="global.html#Suggestion">Suggestion</a></li><li><a href="global.html#SuggestionListLayout">SuggestionListLayout</a></li><li><a href="global.html#VerticalSeparator">VerticalSeparator</a></li><li><a href="global.html#videos">videos</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Sun Feb 02 2020 17:32:16 GMT-0500 (Colombia Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

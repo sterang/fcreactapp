@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: app/screen/containers/configure.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: app/screen/containers/configure.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import React,{Component} from 'react';
+import {NavigationActions} from 'react-navigation';
+import { StyleSheet, Text, View, Button, TextInput, Picker, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Header from '../../components/header';
+import { Ionicons , Octicons } from '@expo/vector-icons';
+import * as SQLite from 'expo-sqlite';
+import {connect} from 'react-redux';
+import API from '../../../utils/api';
+
+const db = SQLite.openDatabase("db5.db");
+/**
+ * Contains all about objects for configure profile
+ * @class
+ */
+class Configure extends Component {
+  static navigationOptions =({navigation})=>{
+    return{
+      header: &lt;Header onPress={()=>navigation.openDrawer()}>Configuración&lt;/Header>,
+    }
+  }
+  state={
+    id_student:null,
+    grado:this.props.student.grado_estudiante,
+    password: null,
+    school: null,
+    schoolSelected: this.props.student.id_colegio,
+    name: this.props.student.nombre_estudiante,
+    last_name: this.props.student.apellido_estudiante,
+    user: this.props.student.nombre_usuario,
+    email:this.props.student.correo_electronico,
+    storage: null,
+    students: null,
+  }
+  /* Load information about a specific student*/ 
+  async componentDidMount(){
+    console.log(this.props.student.grado_estudiante);
+    var query2 = await API.loadSchool(this.props.ipconfig);
+    var query = await API.allStudent(this.props.ipconfig);
+    this.setState({ students: query })
+    this.setState({ school: query2 })
+  }
+  /* Update information about a specific student*/ 
+  async actualizaUser(){
+    //update items set done = 1 where id = ?;
+    data= {
+      id_estudiante: this.props.student.id_estudiante,
+      //tipo_usuario: 1,
+      nombre_estudiante: this.state.name,
+      apellido_estudiante: this.state.last_name,
+      grado_estudiante: this.state.grado,
+      curso_estudiante: 1,
+      id_colegio: this.state.schoolSelected,
+      nombre_usuario: this.state.user,
+      contrasena: this.state.password,
+      correo_electronico: this.state.email
+    }
+    var student = await API.updateStudents(this.props.ipconfig,data);
+    console.log(student);
+    db.transaction(
+      tx => {
+        //id_estudiante, tipo_usuario, nombre_estudiante, apellido_estudiante, grado_estudiante, curso_estudiante, id_colegio, nombre_usuario, contrasena, correo_electronico
+        tx.executeSql("update students set nombre_estudiante = ? , apellido_estudiante = ?, grado_estudiante = ?,curso_estudiante = ?, id_colegio = ?, nombre_usuario = ?, contrasena = ?, correo_electronico = ? where id_estudiante = ? ", [this.state.name,this.state.last_name,this.state.grado, 1, this.state.schoolSelected, this.state.user, this.state.password, this.state.email, this.props.student.id_estudiante]);
+        tx.executeSql("select * from students", [], (_, { rows: { _array } }) =>
+          console.log(_array)
+        );
+      },
+      null,
+      null
+    );
+  }
+  /* Render information about a specific student in a diferent objects*/ 
+    render() {      
+      var datasSchoolFull = null;
+        
+      let itemsInPicker= null;
+      //let itemsInPicker2= null;
+      if(this.state.school==null){
+        itemsInPicker = null;
+      }else{
+        console.log("Imprimiendo State");
+        //console.log(datasSchool);
+        datasSchoolFull = this.state.school;
+        itemsInPicker = datasSchoolFull.map( data=> {
+          return &lt;Picker.Item label={data.nombre_colegio} key={data.id_colegio} value={data.id_colegio}/>
+        })
+      }
+      //Agregando ItemPicker For Grados
+      var dataGrado = [ 
+        {
+          id_grado:6,
+          grado:"6"
+        },
+        {
+          id_grado:7,
+          grado:"7"
+        },
+        {
+          id_grado:8,
+          grado:"8"
+        },
+        {
+          id_grado:9,
+          grado:"9"
+        },
+        {
+          id_grado:10,
+          grado:"10"
+        },
+        {
+          id_grado:11,
+          grado:"11"
+        },
+      ];
+      console.log(dataGrado);
+      let itemsInPicker2 = dataGrado.map( data=> {
+        return &lt;Picker.Item label={data.grado} key={data.id_grado} value={data.id_grado}/>
+      })
+
+      return (
+        &lt;View style={styles.container}>
+          &lt;View style={styles.containerText}>
+            &lt;Text style={styles.styleTextIni}>
+              Actualiza Tus Datos
+            &lt;/Text>
+          &lt;/View>
+          &lt;View style={styles.containerTest}>
+            &lt;Text style={styles.textText} >Nombre: &lt;/Text>
+            &lt;TextInput style={styles.textData} value={this.state.name} onChangeText={(text) => this.setState({name: text})} >&lt;/TextInput>
+          &lt;/View>
+          &lt;View style={styles.containerTest}>
+            &lt;Text style={styles.textText}>Apellido: &lt;/Text>
+            &lt;TextInput style={styles.textData} value={this.state.last_name} onChangeText={(text) => this.setState({last_name: text})}>&lt;/TextInput>
+          &lt;/View>
+
+          &lt;View style={styles.containerTest}>
+                &lt;Text style={styles.textText}>Grado: &lt;/Text>
+                &lt;Picker style={[styles.picker]} itemStyle={styles.pickerItem}
+                selectedValue={this.state.grado}
+                onValueChange={(itemValue, itemIndex) => this.setState({ grado: itemValue })}
+                >   
+                    {itemsInPicker2}
+                &lt;/Picker>
+          &lt;/View>
+          &lt;View style={styles.containerTest}>
+                &lt;Text style={styles.textText}>Colegio: &lt;/Text>
+                &lt;Picker style={[styles.picker]} itemStyle={styles.pickerItem}
+                selectedValue={this.state.schoolSelected}
+                onValueChange={(itemValue, itemIndex) => this.setState({ schoolSelected : itemValue })}
+                >
+                    {itemsInPicker}
+                &lt;/Picker>
+          &lt;/View>
+          &lt;View style={styles.containerTest}>
+                &lt;Text style={styles.textText}>Usuario: &lt;/Text>
+                &lt;TextInput style={styles.textData} value={this.state.user} onChangeText={(text) => this.setState({user: text})}>&lt;/TextInput>
+          &lt;/View>
+          &lt;View style={styles.containerTest}>
+                &lt;Text style={styles.textText}>Correo: &lt;/Text>
+                &lt;TextInput style={styles.textData}  value={this.state.email} onChangeText={(text) => this.setState({email: text})}>&lt;/TextInput>
+          &lt;/View>
+          &lt;View style={styles.containerTest}>
+                &lt;Text style={styles.textText}>Contraseña: &lt;/Text>
+                &lt;TextInput style={styles.textData} secureTextEntry={true} onChangeText={(text) => this.setState({password: text})}>&lt;/TextInput>
+          &lt;/View>
+          &lt;View style={styles.containerText}>
+          &lt;TouchableOpacity style={styles.touchableButtonSignIn} onPress={() => this.actualizaUser()}>
+                    &lt;LinearGradient
+                        colors={['#272d34', '#0f2545', '#272d34']}
+                        style={{ padding: 10, alignItems: 'center', borderRadius: 18, height: 40 }}>
+                        &lt;Text
+                            style={{
+                                backgroundColor: 'transparent',
+                                fontSize: 15,
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                borderRadius: 16
+                            }}>
+                            ACTUALIZA TUS DATOS
+                        &lt;/Text>
+                    &lt;/LinearGradient>
+                &lt;/TouchableOpacity>
+                &lt;/View>
+        &lt;/View>
+      );
+    }
+  }
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#fff',
+      marginTop:10,
+    },
+    containerText:{
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    containerTest:{
+      flex:1,
+      flexDirection: 'row'
+    },
+    textText:{
+      marginTop: 10,
+      marginRight:0,
+      marginLeft:10,
+      fontSize: 15,
+      fontWeight: 'bold',
+      color: '#fff',
+      borderRadius: 16,
+      alignItems: 'flex-start',
+      width: 100,
+      color: '#000000',
+    },
+    textData:{
+      fontSize:14,
+      marginTop: 5,
+      color: '#FFFFFF',
+      borderColor: '#6E6060',
+      borderWidth: 1, 
+      height: 40,
+      width: 200,
+      backgroundColor: '#4F4F4F'
+    },
+    styleTextIni:{
+      marginBottom:15,
+      fontSize: 16,
+      color: '#4F4F4F',
+      fontWeight:'bold',
+    },
+    picker: {
+      marginTop: 5,
+      width: 200,
+      borderRadius:15,
+      height: 40,
+      color:'#FFFFFF',
+      backgroundColor: '#4F4F4F',
+      borderColor: '#6E6060',
+      borderWidth:1,
+    },    
+    pickerItem: {
+      borderRadius:15,
+      height: 44,
+      color: 'white'
+    },
+  });
+  function mapStateToProps(state) {
+    return {
+      student: state.videos.selectedStudent,
+      ipconfig: state.videos.selectedIPConfig
+    }
+  }
+  export default connect(mapStateToProps)(Configure);</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Activities.html">Activities</a></li><li><a href="module-AdminUSer.html">AdminUSer</a></li><li><a href="module-AppNavigatorWithState.html">AppNavigatorWithState</a></li><li><a href="module-Configure.html">Configure</a></li><li><a href="module-createAppContainer.html">createAppContainer</a></li><li><a href="module-DoubtsActivity.html">DoubtsActivity</a></li><li><a href="module-DrawerNavigator.html">DrawerNavigator</a></li><li><a href="module-Main.html">Main</a></li><li><a href="module-navigationReducer.html">navigationReducer</a></li><li><a href="module-Notification.html">Notification</a></li><li><a href="module-Profiles.html">Profiles</a></li><li><a href="module-reducer.html">reducer</a></li><li><a href="module-SwitchNavigator.html">SwitchNavigator</a></li><li><a href="module-videos.html">videos</a></li></ul><h3>Classes</h3><ul><li><a href="Activities.html">Activities</a></li><li><a href="Api.html">Api</a></li><li><a href="AppNavigatorWithState.html">AppNavigatorWithState</a></li><li><a href="CloseSession.html">CloseSession</a></li><li><a href="Configure.html">Configure</a></li><li><a href="contenido.html">contenido</a></li><li><a href="detailActivity.html">detailActivity</a></li><li><a href="evaluationActivity.html">evaluationActivity</a></li><li><a href="Home.html">Home</a></li><li><a href="Login.html">Login</a></li><li><a href="playContent.html">playContent</a></li><li><a href="Player.html">Player</a></li><li><a href="playExcercise.html">playExcercise</a></li><li><a href="Profile.html">Profile</a></li><li><a href="Register.html">Register</a></li><li><a href="selectMoment.html">selectMoment</a></li><li><a href="SuggestionList.html">SuggestionList</a></li><li><a href="testActivity.html">testActivity</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Activity">Activity</a></li><li><a href="global.html#Close">Close</a></li><li><a href="global.html#ContenidoLayout">ContenidoLayout</a></li><li><a href="global.html#DetailActivityLayout">DetailActivityLayout</a></li><li><a href="global.html#Details">Details</a></li><li><a href="global.html#Empty">Empty</a></li><li><a href="global.html#Header">Header</a></li><li><a href="global.html#Layout">Layout</a></li><li><a href="global.html#mapStateToProps">mapStateToProps</a></li><li><a href="global.html#Reading">Reading</a></li><li><a href="global.html#Search">Search</a></li><li><a href="global.html#Subject">Subject</a></li><li><a href="global.html#Suggestion">Suggestion</a></li><li><a href="global.html#SuggestionListLayout">SuggestionListLayout</a></li><li><a href="global.html#VerticalSeparator">VerticalSeparator</a></li><li><a href="global.html#videos">videos</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Sun Feb 02 2020 17:32:16 GMT-0500 (Colombia Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
